@@ -111,7 +111,7 @@ class AppAhorcado(ctk.CTk):
         
         # --- Configuración de Estilo Madera Pro ---
         self.madera_fg = "#8B4513"       # Marrón base
-        self.madera_hover = "#A0522D"    # Hover más claro
+        self.madera_hover = "#A55732"    # Hover más claro
         self.madera_border = "#5D2906"   # Borde oscuro para profundidad
         self.text_color_madera = "#F5DEB3" # Color trigo/crema
         self.corner_radius_madera = 5    # Esquinas redondeadas
