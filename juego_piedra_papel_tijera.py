@@ -12,36 +12,34 @@ class Juego(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Piedra Papel Tijera")
+        self.setWindowTitle("Piedra Papel Tijera - Retro")
         self.setFixedSize(420, 650)
 
-        # 🎨 estilo tipo Apple oscuro
+        # 🎮 ESTILO MARIO BROS
         self.setStyleSheet("""
             QWidget {
-                background-color: #0f0f10;
+                background-color: #5c94fc; /* cielo Mario */
                 color: white;
-                font-family: -apple-system;
-            }
-
-            QFrame {
-                background-color: #1c1c1e;
-                border-radius: 20px;
+                font-family: Courier;
             }
 
             QPushButton {
-                background-color: #2c2c2e;
-                border-radius: 14px;
-                padding: 14px;
-                font-size: 16px;
+                background-color: #e52521; /* rojo Mario */
+                border: 4px solid #000;
+                border-radius: 10px;
+                padding: 10px;
+                font-size: 18px;
                 color: white;
             }
 
             QPushButton:hover {
-                background-color: #3a3a3c;
+                background-color: #ff3b30;
             }
 
-            QPushButton:pressed {
-                background-color: #48484a;
+            QFrame {
+                background-color: #1c1c1c;
+                border: 5px solid #000;
+                border-radius: 15px;
             }
         """)
 
@@ -51,10 +49,12 @@ class Juego(QWidget):
         self.pc = 0
         self.objetivo = 3
 
-        self.eleccion = None
-        self.cpu_choice = None
+        # 🎰 animación CPU
+        self.timer_anim = QTimer()
+        self.timer_anim.timeout.connect(self.animar_cpu)
+        self.anim_index = 0
 
-        # 🧠 stack de pantallas
+        # stack
         self.stack = QStackedLayout()
 
         self.ui_reglas()
@@ -68,50 +68,55 @@ class Juego(QWidget):
 
         self.stack.setCurrentIndex(0)
 
-    # 📜 PANTALLA 1 → REGLAS + COPYRIGHT
-    def ui_reglas(self):
-        w = QFrame()
-        l = QVBoxLayout(w)
+    # 🍄 caja tipo juego retro
+    def caja(self, layout):
+        contenedor = QWidget()
+        contenedor.setStyleSheet("""
+            background-color: #000;
+            border: 5px solid #fff;
+            border-radius: 15px;
+        """)
+        contenedor.setLayout(layout)
+        return contenedor
 
-        title = QLabel("📜 REGLAS DEL JUEGO")
+    # 📜 reglas
+    def ui_reglas(self):
+        l = QVBoxLayout()
+
+        title = QLabel("🍄 PIEDRA PAPEL TIJERA")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Arial", 18))
+        title.setFont(QFont("Courier", 16))
 
         reglas = QLabel(
-            "• Piedra gana a Tijera\n"
-            "• Tijera gana a Papel\n"
-            "• Papel gana a Piedra\n\n"
-            "🏆 El primero en llegar a 3 puntos gana"
+            "▶ Piedra vence Tijera\n"
+            "▶ Tijera vence Papel\n"
+            "▶ Papel vence Piedra\n\n"
+            "🏆 Gana quien llegue a 3"
         )
         reglas.setAlignment(Qt.AlignCenter)
-        reglas.setFont(QFont("Arial", 14))
 
-        btn = QPushButton("▶ JUGAR")
+        btn = QPushButton("START ▶")
         btn.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-
-        # © copyright
-        copyright = QLabel("© promo-67-modulo-1-team-3")
-        copyright.setAlignment(Qt.AlignCenter)
-        copyright.setFont(QFont("Arial", 15))
-        copyright.setStyleSheet("color: #8e8e93;")
 
         l.addWidget(title)
         l.addWidget(reglas)
         l.addWidget(btn)
-        l.addWidget(copyright)
 
-        self.stack.addWidget(w)
+        self.stack.addWidget(self.caja(l))
 
-    # 🟢 PANTALLA 2 → JUGADOR
+    # 🟢 jugador
     def ui_jugador(self):
-        w = QFrame()
-        l = QVBoxLayout(w)
+        l = QVBoxLayout()
 
-        title = QLabel("🟢 TU TURNO")
+        title = QLabel("👾 PLAYER")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Arial", 18))
+        title.setFont(QFont("Courier", 16))
 
-        self.info = QLabel("Elige una opción")
+        self.score_live = QLabel("0 - 0")
+        self.score_live.setAlignment(Qt.AlignCenter)
+        self.score_live.setFont(QFont("Courier", 20))
+
+        self.info = QLabel("SELECT YOUR MOVE")
         self.info.setAlignment(Qt.AlignCenter)
 
         btns = QHBoxLayout()
@@ -129,66 +134,82 @@ class Juego(QWidget):
         btns.addWidget(b3)
 
         l.addWidget(title)
+        l.addWidget(self.score_live)
         l.addWidget(self.info)
         l.addLayout(btns)
 
-        self.stack.addWidget(w)
+        self.stack.addWidget(self.caja(l))
 
-    # 🤖 PANTALLA 3 → CPU
+    # 🤖 CPU
     def ui_cpu(self):
-        w = QFrame()
-        l = QVBoxLayout(w)
+        l = QVBoxLayout()
 
-        title = QLabel("🤖 CPU ELIGIENDO...")
+        title = QLabel("👾 BOWSER CPU")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Arial", 18))
+        title.setFont(QFont("Courier", 16))
 
-        self.cpu_text = QLabel("")
+        self.cpu_text = QLabel("❔")
         self.cpu_text.setAlignment(Qt.AlignCenter)
-        self.cpu_text.setFont(QFont("Arial", 22))
+        self.cpu_text.setFont(QFont("Courier", 60))
 
         l.addWidget(title)
         l.addWidget(self.cpu_text)
 
-        self.stack.addWidget(w)
+        self.stack.addWidget(self.caja(l))
 
-    # 🏁 PANTALLA 4 → FINAL
+    # 🏁 final
     def ui_final(self):
-        w = QFrame()
-        l = QVBoxLayout(w)
+        l = QVBoxLayout()
 
         self.final_text = QLabel("")
         self.final_text.setAlignment(Qt.AlignCenter)
-        self.final_text.setFont(QFont("Arial", 22))
+        self.final_text.setFont(QFont("Courier", 20))
 
         self.score = QLabel("")
         self.score.setAlignment(Qt.AlignCenter)
-        self.score.setFont(QFont("Arial", 18))
 
-        btn = QPushButton("🔄 Jugar de nuevo")
+        btn = QPushButton("RESTART 🔁")
         btn.clicked.connect(self.reset)
 
         l.addWidget(self.final_text)
         l.addWidget(self.score)
         l.addWidget(btn)
 
-        self.stack.addWidget(w)
+        self.stack.addWidget(self.caja(l))
 
-    # 🎮 JUEGO
+    # 🎮 jugar
     def jugar(self, eleccion):
         self.eleccion = eleccion
         self.cpu_choice = random.choice(self.opciones)
 
-        self.cpu_text.setText("...")
-
         self.stack.setCurrentIndex(2)
 
-        QTimer.singleShot(800, self.mostrar_cpu)
+        self.anim_index = 0
+        self.timer_anim.start(120)
 
-    def mostrar_cpu(self):
-        self.cpu_text.setText(self.cpu_choice.upper())
+        QTimer.singleShot(1200, self.parar_animacion)
+
+    # 🎰 animación
+    def animar_cpu(self):
+        emojis = ["✊", "✋", "✂"]
+        self.cpu_text.setText(emojis[self.anim_index % 3])
+        self.anim_index += 1
+
+    # 🛑 parar
+    def parar_animacion(self):
+        self.timer_anim.stop()
+
+        mapa = {
+            "piedra": "✊",
+            "papel": "✋",
+            "tijera": "✂"
+        }
+
+        self.cpu_text.setText(mapa[self.cpu_choice])
+
         QTimer.singleShot(600, self.resolver)
 
+    # 🧠 lógica
     def resolver(self):
         if (self.eleccion == "piedra" and self.cpu_choice == "tijera") or \
            (self.eleccion == "papel" and self.cpu_choice == "piedra") or \
@@ -197,23 +218,24 @@ class Juego(QWidget):
         elif self.eleccion != self.cpu_choice:
             self.pc += 1
 
+        self.score_live.setText(f"{self.pj} - {self.pc}")
+
         if self.pj == self.objetivo or self.pc == self.objetivo:
             self.mostrar_final()
         else:
             self.stack.setCurrentIndex(1)
 
+    # 🏁 final
     def mostrar_final(self):
-        if self.pj == self.objetivo:
-            self.final_text.setText("🏆 GANASTE")
-        else:
-            self.final_text.setText("💀 PERDISTE")
-
+        self.final_text.setText("🏆 YOU WIN!" if self.pj > self.pc else "💀 GAME OVER")
         self.score.setText(f"{self.pj} - {self.pc}")
         self.stack.setCurrentIndex(3)
 
+    # 🔄 reset
     def reset(self):
         self.pj = 0
         self.pc = 0
+        self.score_live.setText("0 - 0")
         self.stack.setCurrentIndex(0)
 
 
