@@ -33,9 +33,9 @@ class VentanaTicTacToe(QWidget):
                 background-color: #ff3b30;
             }
             QPushButton:disabled {
-                background-color: #555;
+                background-color: #000;
                 color: #888;
-                border: 4px solid #333;
+                border: 4px solid #888;
             }
         """)
 
@@ -100,9 +100,8 @@ class VentanaTicTacToe(QWidget):
         # 2. Pantalla del Tablero ASCII (Como el dibujo del ahorcado)
         layout_ascii_vertical = QVBoxLayout()
         layout_ascii_vertical.setSpacing(0)      # Sin espacio entre etiquetas
-        layout_ascii_vertical.setContentsMargins(0, 0, 0, 0) # Sin márgenes internos
+        layout_ascii_vertical.setContentsMargins(20, 0, 20, 0) # Sin márgenes internos
         
-        # Añadimos un muelle arriba para empujar el tablero al centro
         layout_ascii_vertical.addStretch()
 
         self.filas_ascii = []
@@ -112,7 +111,7 @@ class VentanaTicTacToe(QWidget):
             lbl.setFont(QFont("Courier New", 35, QFont.Bold))
             lbl.setStyleSheet("color: #00FF00; border: none;")
             
-            lbl.setFixedHeight(45) # Ajusta este número (40-50) para juntar o separar más
+            lbl.setFixedHeight(37) # Ajusta este número (40-50) para juntar o separar más
             
             layout_ascii_vertical.addWidget(lbl)
             self.filas_ascii.append(lbl)
@@ -180,12 +179,14 @@ class VentanaTicTacToe(QWidget):
         if self.tablero[fila][col] == " ":
             self.tablero[fila][col] = self.turno
             self.movimientos += 1
-            
-            # El botón se deshabilita y se queda gris (según el CSS :disabled)
             self.botones_teclado[n].setEnabled(False)
-            
-            self.actualizar_ascii()
+            self.botones_teclado[n].setStyleSheet(
+                "background-color: #000; color: #888; border: 4px solid #888;"
+                "border-radius: 10px; font-size: 20px; font-weight: bold;"
+            )
 
+            self.actualizar_ascii()
+            
             if self.verificar_ganador(self.turno):
                 self.finalizar(f"WINNER: {self.turno}")
             elif self.movimientos == 9:
@@ -222,6 +223,7 @@ class VentanaTicTacToe(QWidget):
         self.lbl_turno.setStyleSheet("color: #e52521; border: none;")
         for btn in self.botones_teclado.values():
             btn.setEnabled(True)
+            btn.setStyleSheet("")
         self.stack.setCurrentIndex(0)
 
 if __name__ == "__main__":
