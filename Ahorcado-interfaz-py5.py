@@ -80,12 +80,24 @@ imagenes = [ r'''
       
 =========''' ]
 
+trofeo_ascii = r'''
+ ___________
+ '._==_==_=_.'
+ .-\:      /-.
+ | (|:.     |) |
+ '-|:.     |-'
+ \::.    /
+ '::. .'
+ ) (
+ _.' '._
+   `"""""""`  '''
+
 class VentanaAhorcado(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("AHORCADO ")
-        self.setFixedSize(500, 800)
+        self.setWindowTitle("AHORCADO")
+        self.setFixedSize(500, 850) # Aumentado ligeramente para el botón nuevo
 
         # 🎨 ESTILO RETRO STYLE
         self.setStyleSheet("""
@@ -196,45 +208,116 @@ class VentanaAhorcado(QWidget):
         self.stack.addWidget(self.crear_caja(l))
 
     # --- 📜 PANTALLA 2: ENTRADA PALABRA AMIGO ---
+    # --- 📜 PANTALLA 2: ENTRADA PALABRA AMIGO (ESTILO CONSOLA TOTAL) ---
     def ui_entrada_amigo(self):
         l = QVBoxLayout()
+        l.setSpacing(15)
+
         titulo = QLabel("🪓 PLAYER 1 🪓")
         titulo.setAlignment(Qt.AlignCenter)
         titulo.setFont(QFont("Courier", 30, QFont.Bold))
-        
-        instruccion = QLabel("ENTER SECRET WORD:")
-        instruccion.setAlignment(Qt.AlignCenter)
-        instruccion.setFont(QFont("Courier", 18))
+        titulo.setStyleSheet("color: white; border: none;")
 
-        self.input_palabra = QLineEdit()
-        self.input_palabra.setEchoMode(QLineEdit.Password) # LA MAGIA: convierte el texto en ******
-        self.input_palabra.setPlaceholderText("Secret word here...")
-
-        btn_confirmar = QPushButton("START GAME ▶")
-        btn_confirmar.clicked.connect(self.validar_palabra_amigo)
+        # --- CAJA DE "WORD" MÁS PEQUEÑA ---
+        layout_pass = QVBoxLayout()
+        self.display_password = QLabel("WORD: ")
+        self.display_password.setAlignment(Qt.AlignCenter)
+        self.display_password.setFont(QFont("Courier", 20, QFont.Bold))
+        self.display_password.setStyleSheet("color: white; border: none;")
+        layout_pass.addWidget(self.display_password)
         
+        caja_pass = self.crear_caja(layout_pass)
+        caja_pass.setFixedHeight(80) # Altura reducida para que sea compacta
+
+        # --- TECLADO QWERTY CENTRADO ---
+        self.palabra_temporal_amigo = ""
+        widget_teclado_amigo = QWidget()
+        grid_amigo = QGridLayout(widget_teclado_amigo)
+        grid_amigo.setSpacing(5)
+        grid_amigo.setAlignment(Qt.AlignCenter)
+
+        letras_qwerty = [
+            'Q','W','E','R','T','Y','U','I','O','P',
+            'A','S','D','F','G','H','J','K','L','Ñ',
+            'Z','X','C','V','B','N','M'
+        ]
+
+        for i, letra in enumerate(letras_qwerty):
+            btn = QPushButton(letra)
+            btn.setFixedSize(42, 45)
+            # Estilo igual al teclado de juego (Negro/Blanco)
+            btn.setStyleSheet("""
+                QPushButton { background-color: #000; color: #FFF; border: 2px solid #FFF; border-radius: 5px; font-weight: bold; }
+                QPushButton:hover { background-color: #333; }
+            """)
+            btn.clicked.connect(lambda ch, l=letra: self.teclear_amigo(l))
+            
+            if i < 10: grid_amigo.addWidget(btn, 0, i)
+            elif i < 20: grid_amigo.addWidget(btn, 1, i-10)
+            else: grid_amigo.addWidget(btn, 2, i-18)
+
+        # --- BOTONES DE CONTROL (NEGRO Y BLANCO) ---
+        btns_control = QHBoxLayout()
+        
+        btn_borrar = QPushButton("DELETE ⌫")
+        btn_borrar.setFixedSize(140, 50)
+        btn_borrar.setStyleSheet("background-color: #555;")
+        btn_borrar.clicked.connect(self.borrar_letra_amigo)
+
+        btn_listo = QPushButton("CONFIRM ▶")
+        btn_listo.setFixedSize(140, 50)
+        btn_listo.setStyleSheet("background-color: #000; color: white; border: 2px solid white;")
+        btn_listo.clicked.connect(self.confirmar_palabra_amigo)
+
+        btns_control.addStretch()
+        btns_control.addWidget(btn_borrar)
+        btns_control.addSpacing(10)
+        btns_control.addWidget(btn_listo)
+        btns_control.addStretch()
+
         btn_volver = QPushButton("BACK ⬅")
-        btn_volver.setStyleSheet("background-color: #555;")
-        btn_volver.clicked.connect(lambda: self.stack.setCurrentIndex(1))
+        btn_volver.setStyleSheet("background-color: #555; border: 4px solid #000;")
+        btn_volver.clicked.connect(self.cancelar_amigo)
 
         l.addWidget(titulo)
-        l.addWidget(instruccion)
-        l.addWidget(self.input_palabra)
-        l.addWidget(btn_confirmar)
+        l.addWidget(caja_pass)
+        l.addWidget(widget_teclado_amigo)
+        l.addLayout(btns_control)
+        l.addSpacing(10)
         l.addWidget(btn_volver)
+        
         self.stack.addWidget(self.crear_caja(l))
 
-    # --- 🟢 PANTALLA 3: EL JUEGO (TECLADO CENTRADO) ---
+    # --- LÓGICA DE APOYO ---
+    def teclear_amigo(self, letra):
+        self.palabra_temporal_amigo += letra
+        self.display_password.setText("WORD: " + "*" * len(self.palabra_temporal_amigo))
+
+    def borrar_letra_amigo(self):
+        self.palabra_temporal_amigo = self.palabra_temporal_amigo[:-1]
+        self.display_password.setText("WORD: " + "*" * len(self.palabra_temporal_amigo))
+
+    def confirmar_palabra_amigo(self):
+        if len(self.palabra_temporal_amigo) > 0:
+            self.palabra_secreta = self.palabra_temporal_amigo.upper()
+            self.palabra_temporal_amigo = ""
+            self.display_password.setText("WORD: ")
+            self.preparar_tablero()
+
+    def cancelar_amigo(self):
+        self.palabra_temporal_amigo = ""
+        self.display_password.setText("WORD: ")
+        self.stack.setCurrentIndex(1)
+
+    # --- 🟢 PANTALLA 3: EL JUEGO ---
     def ui_juego(self):
-        # Contenedor principal de la pantalla de juego
-        # Forzamos fondo negro para TODA esta pantalla
         self.pantalla_juego_completa = QWidget()
         self.pantalla_juego_completa.setStyleSheet("background-color: #000;")
         
         layout_principal_juego = QVBoxLayout(self.pantalla_juego_completa)
         layout_principal_juego.setSpacing(10)
         
-        # 1. Caja para las VIDAS (Borde blanco, texto rojo)
+        # 1. Caja para las VIDAS
         layout_vidas = QVBoxLayout()
         self.score_lbl = QLabel("LIVES: 8")
         self.score_lbl.setAlignment(Qt.AlignCenter)
@@ -244,7 +327,7 @@ class VentanaAhorcado(QWidget):
         caja_vidas = self.crear_caja(layout_vidas)
         caja_vidas.setFixedHeight(80)
 
-        # 2. Caja para el DIBUJO (Borde blanco, texto verde)
+        # 2. Caja para el DIBUJO
         layout_dibujo = QVBoxLayout()
         self.canvas = QLabel(imagenes[8])
         self.canvas.setAlignment(Qt.AlignCenter)
@@ -258,7 +341,7 @@ class VentanaAhorcado(QWidget):
         layout_dibujo.addWidget(self.canvas)
         caja_dibujo = self.crear_caja(layout_dibujo)
 
-        # 3. Caja para la PALABRA (Borde blanco, texto blanco)
+        # 3. Caja para la PALABRA
         layout_palabra = QVBoxLayout()
         self.word_lbl = QLabel("_ _ _ _")
         self.word_lbl.setAlignment(Qt.AlignCenter)
@@ -268,22 +351,22 @@ class VentanaAhorcado(QWidget):
         caja_palabra = self.crear_caja(layout_palabra)
         caja_palabra.setFixedHeight(100)
 
-        # 4. TECLADO (Fondo negro, letras blancas, bordes blancos)
+        # 4. TECLADO
         widget_teclado = QWidget()
         widget_teclado.setStyleSheet("""
             QPushButton {
-                background-color: #000;      /* Relleno Negro */
-                color: #FFF;                 /* Letra Blanca */
-                border: 2px solid #FFF;      /* Borde Blanco */
+                background-color: #000;
+                color: #FFF;
+                border: 2px solid #FFF;
                 border-radius: 5px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #333;      /* Efecto al pasar el ratón */
+                background-color: #333;
             }
             QPushButton:disabled {
-                color: #555;                 /* Letra Gris al desactivar */
-                border: 2px solid #555;      /* Borde Gris al desactivar */
+                color: #555;
+                border: 2px solid #555;
                 background-color: #000;
             }
         """)
@@ -292,68 +375,90 @@ class VentanaAhorcado(QWidget):
         self.grid_teclado.setSpacing(8)
         self.grid_teclado.setAlignment(Qt.AlignCenter)
 
-        letras = [
-            'Q','W','E','R','T','Y','U','I','O','P',
-            'A','S','D','F','G','H','J','K','L','Ñ',
-            'Z','X','C','V','B','N','M'
-        ]
+        letras = ['Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Ñ','Z','X','C','V','B','N','M']
         
         for i, letra in enumerate(letras):
             btn = QPushButton(letra)
             btn.setFixedSize(42, 45)
             btn.clicked.connect(lambda ch, l=letra: self.intentar_letra(l))
             
-            if i < 10: # Fila 1
-                self.grid_teclado.addWidget(btn, 0, i)
-            elif i < 20: # Fila 2
-                self.grid_teclado.addWidget(btn, 1, i-10)
-            else: # Fila 3 centrado manual
-                self.grid_teclado.addWidget(btn, 2, i-18)
+            if i < 10: self.grid_teclado.addWidget(btn, 0, i)
+            elif i < 20: self.grid_teclado.addWidget(btn, 1, i-10)
+            else: self.grid_teclado.addWidget(btn, 2, i-18)
             
             self.botones_letras[letra] = btn
 
-        # Montamos todo en el layout principal de la pantalla
+        # 🏳️ BOTÓN RENDIRSE (SURRENDER)
+        btn_rendirse = QPushButton("SURRENDER 🏳️")
+        btn_rendirse.setStyleSheet("""
+            background-color: #555; 
+            color: white; 
+            border: 2px solid white; 
+            font-size: 14px;
+        """)
+        btn_rendirse.clicked.connect(lambda: self.mostrar_resultado(False))
+
+        # Montamos todo en el layout principal
         layout_principal_juego.addWidget(caja_vidas, 1)    
         layout_principal_juego.addWidget(caja_dibujo, 4)   
         layout_principal_juego.addWidget(caja_palabra, 1) 
         layout_principal_juego.addWidget(widget_teclado, 2)
+        layout_principal_juego.addWidget(btn_rendirse, 0, Qt.AlignCenter) # Añadido aquí abajo
         
-        # Añadimos la pantalla completa al stack
         self.stack.addWidget(self.pantalla_juego_completa)
 
     # --- 🏁 PANTALLA 4: FINAL ---
     def ui_final(self):
-        l = QVBoxLayout()
-        l.setSpacing(15)
+        layout_final_completo = QVBoxLayout()
+        layout_final_completo.setSpacing(10)
 
-        # Mensaje de Victoria/Derrota
+        # 1. Caja para el MENSAJE (Victoria/Derrota)
+        layout_msg = QVBoxLayout()
         self.msg_final = QLabel("")
         self.msg_final.setAlignment(Qt.AlignCenter)
-        self.msg_final.setFont(QFont("Courier", 28, QFont.Bold))
+        self.msg_final.setFont(QFont("Courier", 24, QFont.Bold))
+        layout_msg.addWidget(self.msg_final)
+        self.caja_msg_final = self.crear_caja(layout_msg)
+        self.caja_msg_final.setFixedHeight(80)
 
-        # EL AHORCADO EN LA PANTALLA FINAL (Gigante y verde)
+        # 2. Caja para el CANVAS (Trofeo o Ahorcado)
+        layout_canvas = QVBoxLayout()
         self.canvas_final = QLabel("")
         self.canvas_final.setAlignment(Qt.AlignCenter)
         self.canvas_final.setStyleSheet("""
             color: #00FF00; 
             font-family: 'Courier New', monospace; 
-            font-size: 22pt; 
+            font-size: 18pt; 
+            font-weight: bold;
         """)
+        layout_canvas.addWidget(self.canvas_final)
+        self.caja_canvas_final = self.crear_caja(layout_canvas)
 
-        # Revelar la palabra
+        # 3. Caja para la PALABRA REVELADA
+        layout_revelar = QVBoxLayout()
         self.revelar_lbl = QLabel("")
         self.revelar_lbl.setAlignment(Qt.AlignCenter)
-        self.revelar_lbl.setFont(QFont("Courier", 18, QFont.Bold))
-        self.revelar_lbl.setStyleSheet("color: white;")
+        self.revelar_lbl.setFont(QFont("Courier", 16, QFont.Bold))
+        self.revelar_lbl.setStyleSheet("color: white; border: none;")
+        layout_revelar.addWidget(self.revelar_lbl)
+        self.caja_revelar = self.crear_caja(layout_revelar)
+        self.caja_revelar.setFixedHeight(80)
 
+        # 4. Botón de Reinicio
         btn_retry = QPushButton("PLAY AGAIN 🔁")
+        btn_retry.setStyleSheet("background-color: #555; border: 4px solid #000;")
         btn_retry.clicked.connect(self.volver_al_inicio)
 
-        l.addWidget(self.msg_final)
-        l.addWidget(self.canvas_final) # Añadimos el dibujo aquí
-        l.addWidget(self.revelar_lbl)
-        l.addWidget(btn_retry)
-        self.stack.addWidget(self.crear_caja(l))
+        layout_final_completo.addWidget(self.caja_msg_final, 1)
+        layout_final_completo.addWidget(self.caja_canvas_final, 4) # Mayor peso al dibujo
+        layout_final_completo.addWidget(self.caja_revelar, 1)
+        layout_final_completo.addWidget(btn_retry, 0)
+
+        # Contenedor para que el fondo sea negro
+        container = QWidget()
+        container.setStyleSheet("background-color: #000;")
+        container.setLayout(layout_final_completo)
+        self.stack.addWidget(container)
 
     # --- 🧠 LÓGICA ---
     def set_dificultad(self, vidas):
@@ -396,7 +501,6 @@ class VentanaAhorcado(QWidget):
         elif self.vidas_actuales <= (8 - self.vidas_iniciales): self.mostrar_resultado(False)
 
     def actualizar_ui(self):
-        # El índice de la imagen depende de cuántas vidas quedan respecto al total de 8
         indice_imagen = self.vidas_actuales
         self.score_lbl.setText(f"LIVES: {self.vidas_actuales}")
         self.word_lbl.setText(" ".join(self.espacios))
@@ -406,11 +510,11 @@ class VentanaAhorcado(QWidget):
         if victoria:
             self.msg_final.setText("🏆 YOU WIN!")
             self.msg_final.setStyleSheet("color: yellow; border:none;")
-            self.canvas_final.setText("") # Si gana, no sale el ahorcado muerto (opcional)
+            self.canvas_final.setText(trofeo_ascii)
         else:
             self.msg_final.setText("💀 GAME OVER")
             self.msg_final.setStyleSheet("color: red; border:none;")
-            self.canvas_final.setText(imagenes[0]) # Muestra el ahorcado completo (0 vidas)
+            self.canvas_final.setText(imagenes[0])
         
         self.revelar_lbl.setText(f"Word was: {self.palabra_secreta}")
         self.stack.setCurrentIndex(4)
