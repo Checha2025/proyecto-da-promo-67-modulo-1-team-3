@@ -8,12 +8,12 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QTimer
 
 
-class Juego(QWidget):
+class JuegoPPT(QWidget):
     def __init__(self):
         super().__init__()
 
         self.setWindowTitle("Piedra Papel Tijera - Retro")
-        self.setFixedSize(420, 650)
+        self.setFixedSize(480, 650)
 
         # 🎮 ESTILO MARIO BROS
         self.setStyleSheet("""
@@ -60,6 +60,7 @@ class Juego(QWidget):
         self.ui_reglas()
         self.ui_jugador()
         self.ui_cpu()
+        self.ui_vs()        
         self.ui_final()
 
         main = QVBoxLayout()
@@ -83,19 +84,23 @@ class Juego(QWidget):
     def ui_reglas(self):
         l = QVBoxLayout()
 
-        title = QLabel("🍄 PIEDRA PAPEL TIJERA")
+        title = QLabel("PIEDRA PAPEL TIJERA")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Courier", 16))
+        title.setFont(QFont("Courier", 25, QFont.Bold))
 
         reglas = QLabel(
-            "▶ Piedra vence Tijera\n"
             "▶ Tijera vence Papel\n"
-            "▶ Papel vence Piedra\n\n"
+            "▶ Papel vence Piedra\n"
+            " ▶ Piedra vence Tijera\n\n"
             "🏆 Gana quien llegue a 3"
         )
         reglas.setAlignment(Qt.AlignCenter)
 
+        reglas.setFont(QFont("Courier", 12)) 
+
         btn = QPushButton("START ▶")
+
+        btn.setFont(QFont("Courier", 18, QFont.Bold)) 
         btn.clicked.connect(lambda: self.stack.setCurrentIndex(1))
 
         l.addWidget(title)
@@ -110,14 +115,15 @@ class Juego(QWidget):
 
         title = QLabel("👾 PLAYER")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Courier", 16))
+        title.setFont(QFont("Courier", 30, QFont.Bold))
 
         self.score_live = QLabel("0 - 0")
         self.score_live.setAlignment(Qt.AlignCenter)
-        self.score_live.setFont(QFont("Courier", 20))
+        self.score_live.setFont(QFont("Courier", 25, QFont.Bold))
 
         self.info = QLabel("SELECT YOUR MOVE")
         self.info.setAlignment(Qt.AlignCenter)
+        self.info.setFont(QFont("Courier", 16, QFont.Bold))
 
         btns = QHBoxLayout()
 
@@ -146,7 +152,7 @@ class Juego(QWidget):
 
         title = QLabel("👾 BOWSER CPU")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Courier", 16))
+        title.setFont(QFont("Courier", 16, QFont.Bold))
 
         self.cpu_text = QLabel("❔")
         self.cpu_text.setAlignment(Qt.AlignCenter)
@@ -155,6 +161,41 @@ class Juego(QWidget):
         l.addWidget(title)
         l.addWidget(self.cpu_text)
 
+        self.stack.addWidget(self.caja(l))
+
+    # ⚔️ VS SCREEN
+    def ui_vs(self):
+        l = QVBoxLayout()
+        
+        title = QLabel("PLAYER vs BOWSER CPU")
+        title.setAlignment(Qt.AlignCenter)
+        title.setFont(QFont("Courier", 18, QFont.Bold))
+
+        vs_layout = QHBoxLayout()
+        
+        self.vs_player = QLabel("")
+        self.vs_player.setAlignment(Qt.AlignCenter)
+        self.vs_player.setFont(QFont("Courier", 60))
+        
+        vs_txt = QLabel("VS")
+        vs_txt.setAlignment(Qt.AlignCenter)
+        vs_txt.setFont(QFont("Courier", 20, QFont.Bold))
+
+        self.vs_cpu = QLabel("")
+        self.vs_cpu.setAlignment(Qt.AlignCenter)
+        self.vs_cpu.setFont(QFont("Courier", 60))
+
+        vs_layout.addWidget(self.vs_player)
+        vs_layout.addWidget(vs_txt)
+        vs_layout.addWidget(self.vs_cpu)
+
+        self.vs_resultado = QLabel("") 
+        self.vs_resultado.setAlignment(Qt.AlignCenter)
+        self.vs_resultado.setFont(QFont("Courier", 22, QFont.Bold))
+
+        l.addWidget(title)
+        l.addLayout(vs_layout)
+        l.addWidget(self.vs_resultado)
         self.stack.addWidget(self.caja(l))
 
     # 🏁 final
@@ -170,6 +211,17 @@ class Juego(QWidget):
 
         btn = QPushButton("RESTART 🔁")
         btn.clicked.connect(self.reset)
+        btn.setFont(QFont("Courier", 18, QFont.Bold))
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: #555; 
+                border: 4px solid #000;
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #777;
+            }
+        """)
 
         l.addWidget(self.final_text)
         l.addWidget(self.score)
@@ -198,16 +250,36 @@ class Juego(QWidget):
     # 🛑 parar
     def parar_animacion(self):
         self.timer_anim.stop()
-
-        mapa = {
-            "piedra": "✊",
-            "papel": "✋",
-            "tijera": "✂"
-        }
-
+        mapa = {"piedra": "✊", "papel": "✋", "tijera": "✂"}
         self.cpu_text.setText(mapa[self.cpu_choice])
+        
+        # Esperamos 1 segundo viendo la elección de Bowser antes del VS
+        QTimer.singleShot(1000, self.mostrar_vs)
 
-        QTimer.singleShot(600, self.resolver)
+    def mostrar_vs(self):
+        mapa = {"piedra": "✊", "papel": "✋", "tijera": "✂"}
+        # Seteamos los iconos elegidos
+        self.vs_player.setText(mapa[self.eleccion])
+        self.vs_cpu.setText(mapa[self.cpu_choice])
+        
+        if self.eleccion == self.cpu_choice:
+            texto = "DRAW! 🤝"
+            color = "white"
+        elif (self.eleccion == "piedra" and self.cpu_choice == "tijera") or \
+             (self.eleccion == "papel" and self.cpu_choice == "piedra") or \
+             (self.eleccion == "tijera" and self.cpu_choice == "papel"):
+            texto = "POINT FOR PLAYER! ⭐"
+            color = "#00FF00" # Verde
+        else:
+            texto = "POINT FOR BOWSER! 💀"
+            color = "#e52521" # Rojo
+
+        self.vs_resultado.setText(texto)
+        self.vs_resultado.setStyleSheet(f"color: {color};")
+
+        self.stack.setCurrentIndex(3)
+        QTimer.singleShot(2500, self.resolver)
+    
 
     # 🧠 lógica
     def resolver(self):
@@ -228,8 +300,10 @@ class Juego(QWidget):
     # 🏁 final
     def mostrar_final(self):
         self.final_text.setText("🏆 YOU WIN!" if self.pj > self.pc else "💀 GAME OVER")
+        self.final_text.setFont(QFont("Courier", 20, QFont.Bold))
         self.score.setText(f"{self.pj} - {self.pc}")
-        self.stack.setCurrentIndex(3)
+        self.score.setFont(QFont("Courier", 20, QFont.Bold))
+        self.stack.setCurrentIndex(4)
 
     # 🔄 reset
     def reset(self):
@@ -241,6 +315,6 @@ class Juego(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    w = Juego()
+    w = JuegoPPT()
     w.show()
     sys.exit(app.exec_())
