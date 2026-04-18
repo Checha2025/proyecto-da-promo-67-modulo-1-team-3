@@ -249,7 +249,7 @@ class MenuPrincipal(QWidget):
         self.ventanas = []
 
     def abrir_ahorcado(self):
-        from ahorcado_interfaz_py5 import VentanaAhorcado
+        from Ahorcado_interfaz_py5 import VentanaAhorcado
         w = VentanaAhorcado()
         w.show()
         self.ventanas.append(w)
