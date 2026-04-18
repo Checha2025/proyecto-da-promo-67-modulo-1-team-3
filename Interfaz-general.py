@@ -146,16 +146,16 @@ class TarjetaJuego(QWidget):
         # ASCII display
         self.lbl_ascii = QLabel(ascii_list[0])
         self.lbl_ascii.setAlignment(Qt.AlignCenter)
-        self.lbl_ascii.setFont(QFont("Courier New", 10, QFont.Bold))
+        self.lbl_ascii.setFont(QFont("Courier New", 13, QFont.Bold))
         self.lbl_ascii.setStyleSheet(f"color: {color_ascii}; border: none; background-color: #000;")
-        self.lbl_ascii.setFixedHeight(170)
+        self.lbl_ascii.setFixedHeight(220)
 
         # Botón
         btn = QPushButton(btn_texto)
-        btn.setFont(QFont("Courier", 12, QFont.Bold))
-        btn.setFixedHeight(45)
+        btn.setFont(QFont("Courier", 16, QFont.Bold))
+        btn.setFixedHeight(55)
         btn.setStyleSheet(
-            "QPushButton { background-color: #000; border: 4px solid #fff; border-radius: 10px; color: white; font-weight: bold; }"
+            "QPushButton { background-color: #000; border: 4px solid #fff; border-radius: 10px; color: white; font-weight: bold; font-size: 18px;}"
             "QPushButton:hover { background-color: #333; }"
         )
         btn.clicked.connect(callback)
@@ -188,7 +188,7 @@ class MenuPrincipal(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("🕹️ RETRO GAMES")
-        self.setFixedSize(640, 700)
+        self.setFixedSize(780, 860)
 
         self.setStyleSheet("""
             QWidget {
@@ -226,15 +226,15 @@ class MenuPrincipal(QWidget):
 
         fila1.addWidget(TarjetaJuego(
             "AHORCADO", ascii_ahorcado, "#00FF00",
-            "💀 AHORCADO", self.abrir_ahorcado
+            "💀 AHORCADO 🪵", self.abrir_ahorcado
         ))
         fila1.addWidget(TarjetaJuego(
             "TIC-TAC-TOE", ascii_tictactoe, "#00FF00",
-            "❌ TIC-TAC-TOE", self.abrir_tictactoe
+            "❌ TIC-TAC-TOE ⭕", self.abrir_tictactoe
         ))
         fila2.addWidget(TarjetaJuego(
             "PIEDRA PAPEL TIJERA", ascii_ppt, "#00FF00",
-            "✊ P. PAPEL TIJERA", self.abrir_ppt
+            "✊ PIEDRA PAPEL TIJERA", self.abrir_ppt
         ))
         fila2.addWidget(TarjetaJuego(
             "TRIVIA", ascii_trivia, "#00FF00",
